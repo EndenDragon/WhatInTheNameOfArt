@@ -1,0 +1,49 @@
+{% extends "layout.html.jinja2" %}
+{% block style %}
+svg { position:fixed; height:100%;  width: 50%; border: 2px solid;}
+{% endblock %}
+{% block body %}
+<span id="svgspan"></span>
+<canvas id="c" style="display:none;"></canvas>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.6.2/fabric.min.js"></script>
+<script>
+var xhttp = new XMLHttpRequest();
+xhttp.open("POST", "/updateGame/"+{{ idLoc }}, true);
+xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+xhttp.send("isJSONParam=false&column=gameState&params="+1);
+
+var canvas = new fabric.Canvas('c');
+canvas.setHeight(300);
+canvas.setWidth(300);
+
+function showSVG(int) {
+  var currentDomain = window.location.protocol + "//" + window.location.host + "/";
+  $.ajax({
+    url: currentDomain + "getGame/" + int,
+    dataType: 'json',
+    success: function( data ) {
+      var svgnode = document.getElementById("svgspan");
+      svgnode.innerHTML = '';
+      $("#svgspan").append(data["canvasData"])
+    }});
+}
+function testWinGame(int) {
+  var currentDomain = window.location.protocol + "//" + window.location.host + "/";
+  $.ajax({
+    url: currentDomain + "getGame/" + int,
+    dataType: 'json',
+    success: function( data ) {
+      if (data["gameState"] == 2) {
+        window.location.href = currentDomain + "projfinish/" + int;
+      }
+    }});
+}
+setInterval(
+  function()
+  {
+    showSVG({{ idLoc }})
+    testWinGame({{ idLoc }})
+  },
+  1000);
+</script>
+{% endblock %}

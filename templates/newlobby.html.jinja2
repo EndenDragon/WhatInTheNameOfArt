@@ -1,0 +1,58 @@
+{% extends "layout.html.jinja2" %}
+{% block body %}
+    <h1>New Game- Lobby #{{ lobbyid }}</h1>
+    <h2>Waiting for people...</h2>
+    <p>Select an artist</p>
+    <form id="form">
+      <div id="players"></div> <br>
+      <input type="button" value="Submit" onclick="formsubmit()" id="subbutton">
+    </form>
+
+    <script>
+    document.getElementById("subbutton").disabled = true;
+    var currentplayersjson = ""
+    function showOptions(int) {
+      var currentDomain = window.location.protocol + "//" + window.location.host + "/";
+      $.ajax({
+        url: currentDomain + "getGame/" + int,
+        dataType: 'json',
+        success: function( data ) {
+          if (data["players"] != "None" && currentplayersjson != data["players"]) {
+            currentplayersjson = data["players"]
+            playersjson = JSON.parse(data["players"])
+            var playersnode = document.getElementById("players");
+            playersnode.innerHTML = '';
+            document.getElementById("subbutton").disabled = true;
+            for (player in playersjson) {
+              $("#players").append('<input type="radio" name="option" value="' + player + " " + playersjson[player] + '" onclick="enableSubmit();">' + player + '<br>')
+            }
+          }
+        }});
+    }
+    setInterval(
+      function()
+      {
+        showOptions( {{ lobbyid }} )
+      },
+      1000);
+    function enableSubmit() {
+      document.getElementById("subbutton").disabled = false;
+    }
+    function formsubmit() {
+      var selectedArtist = $('input[name="option"]:checked').val();
+      var res = selectedArtist.split(" ");
+      var username = res[0]
+      var userid = res[1]
+      var xhttp = new XMLHttpRequest();
+      xhttp.open("POST", "/updateGame/"+{{ lobbyid }}, true);
+      xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      xhttp.send("isJSONParam=false&column=artist&params="+username);
+      var xhttp2 = new XMLHttpRequest();
+      xhttp2.open("POST", "/updateGame/"+{{ lobbyid }}, true);
+      xhttp2.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      xhttp2.send("isJSONParam=false&column=artist_id&params="+userid);
+      var currentDomain = window.location.protocol + "//" + window.location.host + "/";
+      window.location.href = currentDomain + "projection/" + {{ lobbyid }};
+    }
+    </script>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "layout.html.jinja2" %}
+{% block body %}
+    <h1>Game over! Lobby #{{ idLoc }}</h1>
+    <br><br>
+    <h1>Congraduations to <strong id="winnerusr"></strong> for guessing <strong id="guessitem"></strong>!</h1>
+    <span id="svgspan"></span>
+    <a href="../../"><button type="button" class="btn btn-success btn-lg btn-block">Return home</button></a>
+    <script>
+    var currentDomain = window.location.protocol + "//" + window.location.host + "/";
+    $.ajax({
+      url: currentDomain + "getGame/" + {{ idLoc }},
+      dataType: 'json',
+      success: function( data ) {
+        document.getElementById("guessitem").innerHTML = data["word"];
+        document.getElementById("winnerusr").innerHTML = data["winner"];
+      }});
+    </script>
+    <script>
+
+    function showSVG(int) {
+      var currentDomain = window.location.protocol + "//" + window.location.host + "/";
+      $.ajax({
+        url: currentDomain + "getGame/" + int,
+        dataType: 'json',
+        success: function( data ) {
+          var svgnode = document.getElementById("svgspan");
+          svgnode.innerHTML = '';
+          $("#svgspan").append(data["canvasData"])
+        }});
+    }
+showSVG({{ idLoc }})
+    </script>
+{% endblock %}

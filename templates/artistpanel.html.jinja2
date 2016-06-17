@@ -1,0 +1,183 @@
+{% extends "layout.html.jinja2" %}
+{% block body %}
+<canvas style="left: -300px; border: 2px solid; " id="c"></canvas>
+
+          <div id="drawing-mode-options">
+            <label for="drawing-mode-selector">Mode:</label>
+            <select id="drawing-mode-selector">
+              <option>Pencil</option>
+              <option>Circle</option>
+
+              <option>hline</option>
+              <option>vline</option>
+            </select><br>
+            <label for="drawing-color">Color:</label>
+            <input type="color" value="#000000" id="drawing-color"><br>
+            <label for="drawing-line-width">Line width:</label>
+            <input type="range" value="0" min="0" max="30" id="drawing-line-width" style="width:300px;"><br>
+            Draw: <strong id="drawTask"></strong> <input type="button" onclick="clearCanvas();" value="Clear Canvas"><br>
+          </div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.6.2/fabric.min.js"></script>
+<script>
+var canvas = new fabric.Canvas('c');
+canvas.setHeight(300);
+canvas.setWidth(300);
+canvas.isDrawingMode = true;
+var drawingModeEl = document.getElementById('drawing-mode'),
+      drawingOptionsEl = document.getElementById('drawing-mode-options'),
+      drawingColorEl = document.getElementById('drawing-color'),
+      drawingLineWidthEl = document.getElementById('drawing-line-width'),
+      drawingShadowWidth = document.getElementById('drawing-shadow-width');
+
+  if (fabric.PatternBrush) {
+    var vLinePatternBrush = new fabric.PatternBrush(canvas);
+    vLinePatternBrush.getPatternSrc = function() {
+
+      var patternCanvas = fabric.document.createElement('canvas');
+      patternCanvas.width = patternCanvas.height = 10;
+      var ctx = patternCanvas.getContext('2d');
+
+      ctx.strokeStyle = this.color;
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(0, 5);
+      ctx.lineTo(10, 5);
+      ctx.closePath();
+      ctx.stroke();
+
+      return patternCanvas;
+    };
+
+    var hLinePatternBrush = new fabric.PatternBrush(canvas);
+    hLinePatternBrush.getPatternSrc = function() {
+
+      var patternCanvas = fabric.document.createElement('canvas');
+      patternCanvas.width = patternCanvas.height = 10;
+      var ctx = patternCanvas.getContext('2d');
+
+      ctx.strokeStyle = this.color;
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(5, 0);
+      ctx.lineTo(5, 10);
+      ctx.closePath();
+      ctx.stroke();
+
+      return patternCanvas;
+    };
+
+    var squarePatternBrush = new fabric.PatternBrush(canvas);
+    squarePatternBrush.getPatternSrc = function() {
+
+      var squareWidth = 10, squareDistance = 2;
+
+      var patternCanvas = fabric.document.createElement('canvas');
+      patternCanvas.width = patternCanvas.height = squareWidth + squareDistance;
+      var ctx = patternCanvas.getContext('2d');
+
+      ctx.fillStyle = this.color;
+      ctx.fillRect(0, 0, squareWidth, squareWidth);
+
+      return patternCanvas;
+    };
+
+    var diamondPatternBrush = new fabric.PatternBrush(canvas);
+    diamondPatternBrush.getPatternSrc = function() {
+
+      var squareWidth = 10, squareDistance = 5;
+      var patternCanvas = fabric.document.createElement('canvas');
+      var rect = new fabric.Rect({
+        width: squareWidth,
+        height: squareWidth,
+        angle: 45,
+        fill: this.color
+      });
+
+      var canvasWidth = rect.getBoundingRectWidth();
+
+      patternCanvas.width = patternCanvas.height = canvasWidth + squareDistance;
+      rect.set({ left: canvasWidth / 2, top: canvasWidth / 2 });
+
+      var ctx = patternCanvas.getContext('2d');
+      rect.render(ctx);
+
+      return patternCanvas;
+    };
+
+  }
+
+  document.getElementById('drawing-mode-selector').addEventListener('change', function() {
+
+    if (this.value === 'hline') {
+      canvas.freeDrawingBrush = vLinePatternBrush;
+    }
+    else if (this.value === 'vline') {
+      canvas.freeDrawingBrush = hLinePatternBrush;
+    }
+    else if (this.value === 'square') {
+      canvas.freeDrawingBrush = squarePatternBrush;
+    }
+    else if (this.value === 'diamond') {
+      canvas.freeDrawingBrush = diamondPatternBrush;
+    }
+    else {
+      canvas.freeDrawingBrush = new fabric[this.value + 'Brush'](canvas);
+    }
+
+    if (canvas.freeDrawingBrush) {
+      canvas.freeDrawingBrush.color = drawingColorEl.value;
+      canvas.freeDrawingBrush.width = parseInt(drawingLineWidthEl.value, 10) || 1;
+      canvas.freeDrawingBrush.shadowBlur = parseInt(drawingShadowWidth.value, 10) || 0;
+    }
+  });
+
+  drawingColorEl.onchange = function() {
+    canvas.freeDrawingBrush.color = drawingColorEl.value;
+  };
+  drawingLineWidthEl.onchange = function() {
+    canvas.freeDrawingBrush.width = parseInt(drawingLineWidthEl.value, 10) || 1;
+  };
+
+  if (canvas.freeDrawingBrush) {
+    canvas.freeDrawingBrush.color = drawingColorEl.value;
+    canvas.freeDrawingBrush.width = parseInt(drawingLineWidthEl.value, 10) || 1;
+    canvas.freeDrawingBrush.shadowBlur = 0;
+  }
+  function testWinGame(int) {
+    var currentDomain = window.location.protocol + "//" + window.location.host + "/";
+    $.ajax({
+      url: currentDomain + "getGame/" + int,
+      dataType: 'json',
+      success: function( data ) {
+        if (data["gameState"] == 2) {
+          window.location.href = currentDomain + "artistEnd/" + int;
+        }
+      }});
+  }
+  function getWord(int) {
+    var currentDomain = window.location.protocol + "//" + window.location.host + "/";
+    $.ajax({
+      url: currentDomain + "getGame/" + int,
+      dataType: 'json',
+      success: function( data ) {
+        document.getElementById("drawTask").innerHTML = data["word"];
+      }});
+  }
+  function clearCanvas() {
+    canvas.clear();
+  }
+  setInterval(
+    function()
+    {
+      var xhttp = new XMLHttpRequest();
+      xhttp.open("POST", "/updateGame/"+{{ idLoc }}, true);
+      xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      xhttp.send("isJSONParam=false&column=canvasData&params="+canvas.toSVG());
+      testWinGame( {{ idLoc }})
+      getWord( {{ idLoc }})
+    },
+    1000);
+</script>
+{% endblock %}

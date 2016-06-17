@@ -1,0 +1,49 @@
+{% extends "layout.html.jinja2" %}
+{% block body %}
+    <h1>Enter your username (NO SPACES PLEASE) and the lobby code</h1>
+    <p>Would you like to create a new game (on a projector screen) or join a game?</p>
+    <br>
+    <form id="pageform">
+      <div class="form-group">
+        <label for="username">Username (No Space please)</label>
+        <input class="form-control" id="username" placeholder="Username" required="true" pattern="^\S+$">
+      </div>
+      <div class="form-group">
+        <label for="lobbycode">Lobby Code</label>
+        <input class="form-control" id="lobbycode" placeholder="42069" required="true" pattern="^\S+$">
+      </div>
+      <input type="button" name="join" value="Join" onclick="formsubmit()">
+    </form>
+
+    <script>
+    var currentDomain = window.location.protocol + "//" + window.location.host + "/";
+    function getRandomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+    function formsubmit() {
+      var username = document.getElementById('username').value
+      var lobbycode = document.getElementById('lobbycode').value
+      if (Cookies.get('uid') == undefined) {
+          var userid = getRandomInt(69,420)
+          Cookies.set('uid', userid);
+      }
+      $.ajax({
+        url: currentDomain + "getGame/" + lobbycode,
+        dataType: 'json',
+        success: function( data ) {
+          try {
+            playersjson = JSON.parse(data["players"]);
+          } catch (e) {
+            playersjson = {}
+          }
+          playersjson[toString(username)] = userid;
+          var xhttp = new XMLHttpRequest();
+          xhttp.open("POST", "/updateGame/"+lobbycode, true);
+          xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+          xhttp.send("isJSONParam=true&column=players&params="+JSON.stringify(playersjson));
+          window.location.href = currentDomain + "joinlobby/" + lobbycode;
+        }});
+
+    }
+    </script>
+{% endblock %}
